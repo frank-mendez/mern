@@ -1,10 +1,13 @@
 import express from 'express'
 import { config } from 'dotenv'
 import { connectDB } from './utils/connection'
+import { graphqlHTTP } from 'express-graphql'
 
 config()
 
 const app = express()
+
+app.use('/graphql', graphqlHTTP({ schema: null, graphiql: true }))
 
 connectDB()
 	.then(() => {
