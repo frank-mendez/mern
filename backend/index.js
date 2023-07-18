@@ -80,6 +80,17 @@ const mutations = new GraphQLObjectType({
 				return newUser
 			},
 		},
+		updateUser: {
+			type: UserType,
+			args: { id: { type: GraphQLID }, name: { type: GraphQLString }, username: { type: GraphQLString }, email: { type: GraphQLString } },
+			resolve(parent, { name, username, email, id }) {
+				const user = userList.find((user) => user.id === id)
+				user.name = name ? name : user.name
+				user.username = username ? username : user.username
+				user.email = email ? email : user.email
+				return user
+			},
+		},
 	},
 })
 
