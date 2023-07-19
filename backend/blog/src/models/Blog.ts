@@ -1,6 +1,12 @@
-import { Schema, model } from 'mongoose'
+import mongoose, { Document, Schema, model } from 'mongoose'
 
-const blogSchema: Schema = new Schema({
+export interface BlogDocument extends Document {
+	title: string
+	content: string
+	date: Date
+}
+
+const blogSchema: Schema = new Schema<BlogDocument>({
 	title: {
 		type: String,
 		required: true,
@@ -15,4 +21,6 @@ const blogSchema: Schema = new Schema({
 	},
 })
 
-export default model('Blog', blogSchema)
+export const Blog = mongoose.model('Blog', blogSchema)
+
+export default Blog

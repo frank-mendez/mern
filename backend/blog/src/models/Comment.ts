@@ -1,6 +1,11 @@
-import { Schema, model } from 'mongoose'
+import mongoose, { Schema, model } from 'mongoose'
 
-const commentSchema: Schema = new Schema({
+export interface CommentDocument extends Document {
+	text: string
+	date: Date
+}
+
+const commentSchema: Schema = new Schema<CommentDocument>({
 	text: {
 		type: String,
 		required: true,
@@ -11,4 +16,6 @@ const commentSchema: Schema = new Schema({
 	},
 })
 
-export default model('Comment', commentSchema)
+export const Comment = mongoose.model('Comment', commentSchema)
+
+export default Comment

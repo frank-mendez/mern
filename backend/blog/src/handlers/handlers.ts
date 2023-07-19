@@ -1,9 +1,9 @@
 import { GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
 import { BlogType, CommentType, UserType } from '../schema/schema'
-import User from '../models/User'
+import User, { UserDocument } from '../models/User'
 import Blog from '../models/Blog'
 import Comment from '../models/Comment'
-import { hashSync } from 'bcryptjs'
+import { hashSync, compareSync } from 'bcryptjs'
 
 const RootQuery = new GraphQLObjectType({
 	name: 'RootQuery',
@@ -29,7 +29,7 @@ const RootQuery = new GraphQLObjectType({
 	},
 })
 
-const mutation = new GraphQLObjectType({
+const mutations = new GraphQLObjectType({
 	name: 'mutation',
 	fields: {
 		signup: {
@@ -41,7 +41,7 @@ const mutation = new GraphQLObjectType({
 			},
 			async resolve(parent, { email, name, password }) {
 				try {
-					const existingUser = User.findOne({ email })
+					const existingUser: UserDocument = await User.findOne({ email })
 					if (existingUser) return new Error('User already exists')
 					const encrpytedPassword = hashSync(password)
 					const user = new User({ name, email, password: encrpytedPassword })
@@ -51,9 +51,28 @@ const mutation = new GraphQLObjectType({
 				}
 			},
 		},
+		login: {
+			type: UserType,
+			args: {
+				email: { type: GraphQLNonNull(GraphQLString) },
+				password: { type: GraphQLNonNull(GraphQLString) },
+			},
+			async resolve(parent, { email, password }) {
+				try {
+					const existingUser: UserDocument = await User.findOne({ email })
+					if (!existingUser) return new Error('Email is not yet registered')
+					const decryptedPassword = compareSync(password, existingUser.password)
+					if (!decryptedPassword) return new Error('Invalid Credentials')
+					return existingUser
+				} catch (error) {
+					return new Error('Login failed. Try again')
+				}
+			},
+		},
 	},
 })
 
 export default new GraphQLSchema({
 	query: RootQuery,
+	mutation: mutations,
 })
