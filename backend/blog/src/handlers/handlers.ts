@@ -1,7 +1,7 @@
-import { GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
+import { GraphQLID, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
 import { BlogType, CommentType, UserType } from '../schema/schema'
 import User, { UserDocument } from '../models/User'
-import Blog from '../models/Blog'
+import Blog, { BlogDocument } from '../models/Blog'
 import Comment from '../models/Comment'
 import { hashSync, compareSync } from 'bcryptjs'
 
@@ -83,6 +83,38 @@ const mutations = new GraphQLObjectType({
 					return newBlog
 				} catch (error) {
 					return new Error('Create blog failed. Try again')
+				}
+			},
+		},
+		updateBlog: {
+			type: BlogType,
+			args: {
+				id: { type: GraphQLNonNull(GraphQLID) },
+				title: { type: GraphQLNonNull(GraphQLString) },
+				content: { type: GraphQLNonNull(GraphQLString) },
+			},
+			async resolve(parent, { title, content, id }) {
+				try {
+					const blog: BlogDocument = await Blog.findById(id)
+					if (!blog) return new Error('Blog does not exist')
+					return await Blog.findByIdAndUpdate(id, { title, content }, { new: true })
+				} catch (error) {
+					return new Error('Update blog failed. Try again')
+				}
+			},
+		},
+		deleteBlog: {
+			type: BlogType,
+			args: {
+				id: { type: GraphQLNonNull(GraphQLID) },
+			},
+			async resolve(parent, { id }) {
+				try {
+					const blog: BlogDocument = await Blog.findById(id)
+					if (!blog) return new Error('Blog does not exist')
+					return await Blog.findByIdAndDelete(id)
+				} catch (error) {
+					return new Error('Update blog failed. Try again')
 				}
 			},
 		},
