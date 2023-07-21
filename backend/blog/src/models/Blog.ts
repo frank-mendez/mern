@@ -1,9 +1,13 @@
 import mongoose, { Document, Schema, model } from 'mongoose'
+import { UserDocument } from './User'
+import { CommentDocument } from './Comment'
 
 export interface BlogDocument extends Document {
 	title: string
 	content: string
 	date: Date
+	user: UserDocument
+	comments: CommentDocument[]
 }
 
 const blogSchema: Schema = new Schema<BlogDocument>({
@@ -19,6 +23,11 @@ const blogSchema: Schema = new Schema<BlogDocument>({
 		type: Date,
 		required: true,
 	},
+	user: {
+		type: Schema.Types.ObjectId,
+		ref: 'User',
+	},
+	comments: [{ types: Schema.Types.ObjectId, ref: 'Comment' }],
 })
 
 export const Blog = mongoose.model('Blog', blogSchema)
