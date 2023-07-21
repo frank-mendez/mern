@@ -69,6 +69,23 @@ const mutations = new GraphQLObjectType({
 				}
 			},
 		},
+		addBlog: {
+			type: BlogType,
+			args: {
+				title: { type: GraphQLNonNull(GraphQLString) },
+				content: { type: GraphQLNonNull(GraphQLString) },
+				date: { type: GraphQLNonNull(GraphQLString) },
+			},
+			async resolve(parent, { title, content, date }) {
+				try {
+					const newBlog = new Blog({ title, content, date })
+					await newBlog.save()
+					return newBlog
+				} catch (error) {
+					return new Error('Create blog failed. Try again')
+				}
+			},
+		},
 	},
 })
 
