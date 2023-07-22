@@ -27,7 +27,7 @@ const blogSchema: Schema = new Schema<BlogDocument>({
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 	},
-	comments: [{ types: Schema.Types.ObjectId, ref: 'Comment' }],
+	comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
 })
 
 export const Blog = mongoose.model('Blog', blogSchema)

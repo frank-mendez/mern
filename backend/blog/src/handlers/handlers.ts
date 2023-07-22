@@ -4,6 +4,7 @@ import User, { UserDocument } from '../models/User'
 import Blog, { BlogDocument } from '../models/Blog'
 import Comment from '../models/Comment'
 import { hashSync, compareSync } from 'bcryptjs'
+import { startSession } from 'mongoose'
 
 const RootQuery = new GraphQLObjectType({
 	name: 'RootQuery',
@@ -75,14 +76,25 @@ const mutations = new GraphQLObjectType({
 				title: { type: GraphQLNonNull(GraphQLString) },
 				content: { type: GraphQLNonNull(GraphQLString) },
 				date: { type: GraphQLNonNull(GraphQLString) },
+				user: { type: GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(parent, { title, content, date }) {
+			async resolve(parent, { title, content, date, user }) {
+				const session = await startSession()
 				try {
-					const newBlog = new Blog({ title, content, date })
-					await newBlog.save()
-					return newBlog
+					const newBlog = new Blog({ title, content, date, user })
+
+					const existingUser = await User.findById(user)
+					if (!existingUser) throw new Error('User not found')
+
+					session.startTransaction({ session })
+					existingUser.blogs.push(newBlog)
+					await existingUser.save({ session })
+
+					return await newBlog.save({ session })
 				} catch (error) {
 					return new Error('Create blog failed. Try again')
+				} finally {
+					await session.commitTransaction()
 				}
 			},
 		},
