@@ -2,7 +2,7 @@ import { GraphQLID, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchem
 import { BlogType, CommentType, UserType } from '../schema/schema'
 import User, { UserDocument } from '../models/User'
 import Blog, { BlogDocument } from '../models/Blog'
-import Comment from '../models/Comment'
+import Comment, { CommentDocument } from '../models/Comment'
 import { hashSync, compareSync } from 'bcryptjs'
 import { Types, startSession } from 'mongoose'
 
@@ -132,7 +132,7 @@ const mutations = new GraphQLObjectType({
 					existingUser.blogs.pull(blog)
 					await existingUser.save({ session })
 
-					return await Blog.findByIdAndDelete(id)
+					return await Blog.findByIdAndRemove(id, { session })
 				} catch (error) {
 					return new Error('Update blog failed. Try again')
 				} finally {
@@ -168,6 +168,41 @@ const mutations = new GraphQLObjectType({
 					return await newComment.save({ session })
 				} catch (error) {
 					return new Error('Create comment failed. Try again')
+				} finally {
+					await session.commitTransaction()
+				}
+			},
+		},
+		deleteComment: {
+			type: CommentType,
+			args: {
+				id: { type: GraphQLNonNull(GraphQLID) },
+			},
+			async resolve(parent, { id }) {
+				const session = await startSession()
+				try {
+					session.startTransaction({ session })
+
+					const existingComment: CommentDocument = await Comment.findById(id).populate('user').populate('blog')
+					if (!existingComment) throw new Error('Comment does not exist')
+
+					const user = existingComment.user.id
+					const blog = existingComment.blog.id
+
+					const existingUser: UserDocument = await User.findById(user)
+					if (!existingUser) throw new Error('User not found')
+
+					const existingBlog: BlogDocument = await Blog.findById(blog)
+					if (!existingBlog) throw new Error('Blog does not exist')
+
+					existingUser.comments.pull(existingComment)
+					existingBlog.comments.pull(existingComment)
+					await existingUser.save({ session })
+					await existingBlog.save({ session })
+
+					return await Comment.findByIdAndRemove(id, { session })
+				} catch (error) {
+					return new Error('Delete comment failed. Try again')
 				} finally {
 					await session.commitTransaction()
 				}
