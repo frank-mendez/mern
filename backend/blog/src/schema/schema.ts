@@ -41,7 +41,7 @@ export const BlogType = new GraphQLObjectType({
 		comments: {
 			type: GraphQLList(CommentType),
 			async resolve(parent) {
-				return await Comment.find({ user: parent.comment })
+				return await Comment.find({ blog: parent.id })
 			},
 		},
 	}),

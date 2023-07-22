@@ -7,7 +7,7 @@ export interface UserDocument extends Document {
 	email: string
 	password: string
 	blogs: Types.DocumentArray<BlogDocument>
-	comments: Types.DocumentArray<UserDocument>
+	comments: Types.DocumentArray<CommentDocument>
 }
 
 const userSchema: Schema = new Schema<UserDocument>({

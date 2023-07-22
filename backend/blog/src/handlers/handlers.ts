@@ -140,6 +140,39 @@ const mutations = new GraphQLObjectType({
 				}
 			},
 		},
+		addCommentToBlog: {
+			type: CommentType,
+			args: {
+				text: { type: GraphQLNonNull(GraphQLString) },
+				date: { type: GraphQLNonNull(GraphQLString) },
+				blog: { type: GraphQLNonNull(GraphQLID) },
+				user: { type: GraphQLNonNull(GraphQLID) },
+			},
+			async resolve(parent, { text, date, blog, user }) {
+				const session = await startSession()
+				try {
+					session.startTransaction({ session })
+
+					const existingUser: UserDocument = await User.findById(user)
+					if (!existingUser) throw new Error('User not found')
+
+					const existingBlog: BlogDocument = await Blog.findById(blog)
+					if (!existingBlog) throw new Error('Blog does not exist')
+
+					const newComment = new Comment({ text, blog, date, user })
+					existingUser.comments.push(newComment)
+					existingBlog.comments.push(newComment)
+					await existingUser.save({ session })
+					await existingBlog.save({ session })
+
+					return await newComment.save({ session })
+				} catch (error) {
+					return new Error('Create comment failed. Try again')
+				} finally {
+					await session.commitTransaction()
+				}
+			},
+		},
 	},
 })
 
