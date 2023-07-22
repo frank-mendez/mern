@@ -4,7 +4,7 @@ import User, { UserDocument } from '../models/User'
 import Blog, { BlogDocument } from '../models/Blog'
 import Comment from '../models/Comment'
 import { hashSync, compareSync } from 'bcryptjs'
-import { startSession } from 'mongoose'
+import { Types, startSession } from 'mongoose'
 
 const RootQuery = new GraphQLObjectType({
 	name: 'RootQuery',
@@ -121,12 +121,22 @@ const mutations = new GraphQLObjectType({
 				id: { type: GraphQLNonNull(GraphQLID) },
 			},
 			async resolve(parent, { id }) {
+				const session = await startSession()
 				try {
-					const blog: BlogDocument = await Blog.findById(id)
-					if (!blog) return new Error('Blog does not exist')
+					session.startTransaction({ session })
+					const blog: BlogDocument = await Blog.findById(id).populate('user')
+					if (!blog) throw new Error('Blog does not exist')
+
+					const existingUser = blog.user
+					if (!existingUser) throw new Error('No user found in existing blog')
+					existingUser.blogs.pull(blog)
+					await existingUser.save({ session })
+
 					return await Blog.findByIdAndDelete(id)
 				} catch (error) {
 					return new Error('Update blog failed. Try again')
+				} finally {
+					session.commitTransaction()
 				}
 			},
 		},

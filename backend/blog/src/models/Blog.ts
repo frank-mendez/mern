@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, model } from 'mongoose'
+import mongoose, { Document, Schema, Types, model } from 'mongoose'
 import { UserDocument } from './User'
 import { CommentDocument } from './Comment'
 
@@ -7,7 +7,7 @@ export interface BlogDocument extends Document {
 	content: string
 	date: Date
 	user: UserDocument
-	comments: CommentDocument[]
+	comments: Types.DocumentArray<CommentDocument>
 }
 
 const blogSchema: Schema = new Schema<BlogDocument>({
